@@ -1,0 +1,996 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Meridian sandbox API",
+    "version": "0.1.0",
+    "description": "Synthetic U.S./international banking simulator. No real funds, live network access, authorized stablecoin issuance, official sanctions screening or regulatory certification. The optional sandbox bearer token applies to all /api paths when configured. Local default has no token; use trusted local execution or owner-private hosting only. Hosted adapter behavior may differ; this contract documents the local Node service."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:3000",
+      "description": "Local sandbox default"
+    }
+  ],
+  "security": [
+    {
+      "SandboxToken": []
+    },
+    {}
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Sandbox health and real-money flag",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "const": "ok"
+                    },
+                    "mode": {
+                      "const": "sandbox"
+                    },
+                    "realMoneyEnabled": {
+                      "const": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Configured sandbox token missing/invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/snapshot": {
+      "get": {
+        "summary": "Read full single-operator synthetic sandbox state",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Configured sandbox token missing/invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/state": {
+      "get": {
+        "summary": "Alias for /api/snapshot",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Configured sandbox token missing/invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/commands": {
+      "post": {
+        "summary": "Execute an idempotent simulator command",
+        "description": "Same key plus identical payload returns original result. Reusing a key with a different payload returns 409. Browser Origin, when supplied, must match Host. Simulated settlement does not send or settle money. Mint/burn track synthetic token ownership by account; burn requires the destination account to own enough tokens. The sandbox operator still administers every account without tenant RBAC. Consent payments:write is demonstrative and does not grant command access.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command"
+              },
+              "examples": {
+                "transfer": {
+                  "value": {
+                    "type": "transfer",
+                    "from": "operating-usd",
+                    "to": "customer-usd",
+                    "amount": 12500,
+                    "idempotencyKey": "transfer-demo-001"
+                  }
+                },
+                "mint": {
+                  "value": {
+                    "type": "mint",
+                    "from": "operating-usd",
+                    "amount": 10000,
+                    "idempotencyKey": "mint-demo-001"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid command or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Configured sandbox token missing/invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Consent or same-origin check failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key reused with a different payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "JSON request exceeds 65536 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Content-Type must be application/json",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Insufficient available funds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal sandbox error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/open-banking/accounts": {
+      "get": {
+        "summary": "Read accounts with a simulated consent",
+        "description": "Requires active, unexpired X-Consent-ID containing accounts:read. Not OAuth, FAPI, third-party identity or resource-owner isolation. Account endpoint excludes internal asset/clearing/reserve accounts.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Consent-ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "sandbox"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Account"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Configured sandbox token missing/invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Consent or same-origin check failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/open-banking/transactions": {
+      "get": {
+        "summary": "Read transactions with a simulated consent",
+        "description": "Requires active, unexpired X-Consent-ID containing transactions:read. Not OAuth, FAPI, third-party identity or resource-owner isolation. Account endpoint excludes internal asset/clearing/reserve accounts.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Consent-ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "sandbox"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Configured sandbox token missing/invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Consent or same-origin check failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "SandboxToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Optional SANDBOX_API_TOKEN; when configured, every API request requires this token. This is not OAuth."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error",
+          "code"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "Account": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "currency",
+          "balance",
+          "held",
+          "available",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "USD",
+              "EUR",
+              "GBP"
+            ]
+          },
+          "balance": {
+            "type": "integer"
+          },
+          "held": {
+            "type": "integer"
+          },
+          "available": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "operating",
+              "customer",
+              "asset",
+              "clearing",
+              "reserve"
+            ]
+          }
+        }
+      },
+      "Snapshot": {
+        "type": "object",
+        "required": [
+          "mode",
+          "accounts",
+          "transactions",
+          "payments",
+          "cases",
+          "cards",
+          "consents",
+          "chain",
+          "stablecoin",
+          "metrics",
+          "rails"
+        ],
+        "properties": {
+          "mode": {
+            "const": "sandbox"
+          },
+          "accounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Account"
+            }
+          },
+          "transactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "cases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "consents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "chain": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "rails": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "stablecoin": {
+            "type": "object",
+            "properties": {
+              "symbol": {
+                "type": "string"
+              },
+              "supply": {
+                "type": "integer"
+              },
+              "reserves": {
+                "type": "integer"
+              },
+              "coverage": {
+                "type": "number"
+              },
+              "holders": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              },
+              "chainId": {
+                "type": "string"
+              },
+              "network": {
+                "type": "string"
+              }
+            }
+          },
+          "metrics": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      },
+      "CommandResponse": {
+        "type": "object",
+        "required": [
+          "result",
+          "state"
+        ],
+        "properties": {
+          "result": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "state": {
+            "$ref": "#/components/schemas/Snapshot"
+          }
+        }
+      },
+      "transfer": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "from",
+          "to",
+          "amount"
+        ],
+        "properties": {
+          "type": {
+            "const": "transfer"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "operating-usd",
+              "customer-usd",
+              "operating-eur",
+              "customer-eur",
+              "operating-gbp",
+              "customer-gbp"
+            ]
+          },
+          "to": {
+            "type": "string",
+            "enum": [
+              "operating-usd",
+              "customer-usd",
+              "operating-eur",
+              "customer-eur",
+              "operating-gbp",
+              "customer-gbp"
+            ]
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000,
+            "description": "Integer minor units (cents for USD/EUR/GBP); no floating-point amounts."
+          }
+        }
+      },
+      "payment": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "from",
+          "amount",
+          "rail",
+          "beneficiary"
+        ],
+        "properties": {
+          "type": {
+            "const": "payment"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "operating-usd",
+              "customer-usd",
+              "operating-eur",
+              "customer-eur",
+              "operating-gbp",
+              "customer-gbp"
+            ]
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000,
+            "description": "Integer minor units (cents for USD/EUR/GBP); no floating-point amounts."
+          },
+          "rail": {
+            "type": "string",
+            "enum": [
+              "ACH",
+              "FedNow",
+              "SWIFT",
+              "SEPA"
+            ]
+          },
+          "beneficiary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "risk": {
+            "type": "string",
+            "enum": [
+              "blocked"
+            ],
+            "description": "Explicit synthetic sanctions-test flag; not real screening."
+          }
+        }
+      },
+      "tokenTransfer": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "from",
+          "to",
+          "amount"
+        ],
+        "properties": {
+          "type": {
+            "const": "tokenTransfer"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "operating-usd",
+              "customer-usd",
+              "operating-eur",
+              "customer-eur",
+              "operating-gbp",
+              "customer-gbp"
+            ]
+          },
+          "to": {
+            "type": "string",
+            "enum": [
+              "operating-usd",
+              "customer-usd",
+              "operating-eur",
+              "customer-eur",
+              "operating-gbp",
+              "customer-gbp"
+            ]
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000,
+            "description": "Integer minor units (cents for USD/EUR/GBP); no floating-point amounts."
+          }
+        }
+      },
+      "settlePayment": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "paymentId"
+        ],
+        "properties": {
+          "type": {
+            "const": "settlePayment"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "paymentId": {
+            "type": "string"
+          }
+        }
+      },
+      "resolveCase": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "caseId",
+          "decision"
+        ],
+        "properties": {
+          "type": {
+            "const": "resolveCase"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "caseId": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approve",
+              "reject"
+            ]
+          }
+        }
+      },
+      "mint": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "from",
+          "amount"
+        ],
+        "properties": {
+          "type": {
+            "const": "mint"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "from": {
+            "type": "string",
+            "enum": [
+              "operating-usd",
+              "customer-usd",
+              "operating-eur",
+              "customer-eur",
+              "operating-gbp",
+              "customer-gbp"
+            ]
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000,
+            "description": "Integer minor units (cents for USD/EUR/GBP); no floating-point amounts."
+          }
+        }
+      },
+      "burn": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "to",
+          "amount"
+        ],
+        "properties": {
+          "type": {
+            "const": "burn"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "to": {
+            "type": "string",
+            "enum": [
+              "operating-usd",
+              "customer-usd",
+              "operating-eur",
+              "customer-eur",
+              "operating-gbp",
+              "customer-gbp"
+            ]
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000,
+            "description": "Integer minor units (cents for USD/EUR/GBP); no floating-point amounts."
+          }
+        }
+      },
+      "cardFreeze": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "cardId",
+          "frozen"
+        ],
+        "properties": {
+          "type": {
+            "const": "cardFreeze"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "frozen": {
+            "type": "boolean"
+          }
+        }
+      },
+      "cardAuthorize": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "cardId",
+          "amount",
+          "merchant"
+        ],
+        "properties": {
+          "type": {
+            "const": "cardAuthorize"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "cardId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000,
+            "description": "Integer minor units (cents for USD/EUR/GBP); no floating-point amounts."
+          },
+          "merchant": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "consent": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "name",
+          "scopes"
+        ],
+        "properties": {
+          "type": {
+            "const": "consent"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": [
+                "accounts:read",
+                "transactions:read",
+                "payments:write"
+              ]
+            }
+          },
+          "expiresInHours": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 720,
+            "default": 24
+          }
+        }
+      },
+      "revokeConsent": {
+        "type": "object",
+        "required": [
+          "type",
+          "idempotencyKey",
+          "consentId"
+        ],
+        "properties": {
+          "type": {
+            "const": "revokeConsent"
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "consentId": {
+            "type": "string"
+          }
+        }
+      },
+      "Command": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/transfer"
+          },
+          {
+            "$ref": "#/components/schemas/payment"
+          },
+          {
+            "$ref": "#/components/schemas/tokenTransfer"
+          },
+          {
+            "$ref": "#/components/schemas/settlePayment"
+          },
+          {
+            "$ref": "#/components/schemas/resolveCase"
+          },
+          {
+            "$ref": "#/components/schemas/mint"
+          },
+          {
+            "$ref": "#/components/schemas/burn"
+          },
+          {
+            "$ref": "#/components/schemas/cardFreeze"
+          },
+          {
+            "$ref": "#/components/schemas/cardAuthorize"
+          },
+          {
+            "$ref": "#/components/schemas/consent"
+          },
+          {
+            "$ref": "#/components/schemas/revokeConsent"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.dev.vars*
+data/
+work/
+outputs/
+.sites-runtime/
+.wrangler/
+dist/server/
+dist/.openai/
+dist/drizzle/
+*.log
+.local/
