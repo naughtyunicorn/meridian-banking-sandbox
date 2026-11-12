@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node server/index.mjs",
-    "test": "node --test server/*.test.mjs public/*.test.mjs worker/*.test.mjs",
-    "build": "node scripts/build.mjs"
+    "test": "node --test server/*.test.mjs public/*.test.mjs worker/*.test.mjs tests/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "test:artifact": "npm run build && node worker/artifact-check.mjs"
   }
 }

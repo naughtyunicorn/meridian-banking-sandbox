@@ -52,15 +52,15 @@ For real issuance, use an explicit state machine across ledger and chain boundar
 
 ## U.S. and international capability gates
 
-| Capability | Sandbox behavior | Required before live activation |
-| --- | --- | --- |
-| ACH | Synthetic instructions and lifecycle | Sponsor/ODFI agreement, originator authorization, applicable Nacha Rules, account validation and fraud controls, return and exception handling |
-| FedNow | Simulated instant payment | Eligible participating institution or service-provider arrangement, certification, funding/liquidity and 24/7 operations |
-| SWIFT | Simulated international message/workflow | Authorized connectivity and service agreements, BIC/message requirements, correspondent arrangements, sanctions and payment transparency controls |
-| SEPA/international | Explicitly simulated country/currency options | Licensed local or partner service, scheme participation/access, local customer protection, AML, privacy and data-transfer assessment |
-| Cards | Synthetic card references and authorization events | Issuer/BIN sponsor and processor/network agreements, applicable PCI DSS scope, tokenization, disputes, fraud and settlement operations |
-| Open banking | API/consent workflow demonstration | Jurisdiction-specific authorization, identity, security-profile conformance, consent and revocation enforcement, data minimization and liability model |
-| Stablecoin | Synthetic reserve allocation and test tokens | Authorized issuer/legal model, reserve/custody arrangements, redemption rights, required disclosures, controls and independent review |
+| Capability         | Sandbox behavior                                   | Required before live activation                                                                                                                        |
+| ------------------ | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ACH                | Synthetic instructions and lifecycle               | Sponsor/ODFI agreement, originator authorization, applicable Nacha Rules, account validation and fraud controls, return and exception handling         |
+| FedNow             | Simulated instant payment                          | Eligible participating institution or service-provider arrangement, certification, funding/liquidity and 24/7 operations                               |
+| SWIFT              | Simulated international message/workflow           | Authorized connectivity and service agreements, BIC/message requirements, correspondent arrangements, sanctions and payment transparency controls      |
+| SEPA/international | Explicitly simulated country/currency options      | Licensed local or partner service, scheme participation/access, local customer protection, AML, privacy and data-transfer assessment                   |
+| Cards              | Synthetic card references and authorization events | Issuer/BIN sponsor and processor/network agreements, applicable PCI DSS scope, tokenization, disputes, fraud and settlement operations                 |
+| Open banking       | API/consent workflow demonstration                 | Jurisdiction-specific authorization, identity, security-profile conformance, consent and revocation enforcement, data minimization and liability model |
+| Stablecoin         | Synthetic reserve allocation and test tokens       | Authorized issuer/legal model, reserve/custody arrangements, redemption rights, required disclosures, controls and independent review                  |
 
 Nacha is the ACH rulemaking/scheme organization; it is not an additional settlement rail. SWIFT is primarily financial messaging; sending a message does not itself settle funds. Currency support does not confer permission to serve residents of that currency's countries.
 

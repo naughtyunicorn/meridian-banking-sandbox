@@ -1,2 +1,11 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import {createHash as reference} from 'node:crypto';import {createHash} from './crypto.mjs';
-test('portable SHA-256 matches Node for unicode, empty and multi-block inputs',()=>{for(const value of ['', 'abc', 'Meridian 🌎 €', 'x'.repeat(200000)])assert.equal(createHash('sha256').update(value).digest('hex'),reference('sha256').update(value).digest('hex'));});
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { createHash as reference } from "node:crypto";
+import { createHash } from "./crypto.mjs";
+test("portable SHA-256 matches Node for unicode, empty and multi-block inputs", () => {
+  for (const value of ["", "abc", "Meridian 🌎 €", "x".repeat(200000)])
+    assert.equal(
+      createHash("sha256").update(value).digest("hex"),
+      reference("sha256").update(value).digest("hex"),
+    );
+});

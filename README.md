@@ -27,22 +27,22 @@ Amounts use integer minor units; no implicit FX or aggregation across currencies
 
 ## Repository layout
 
-| Path | Purpose |
-| --- | --- |
-| `server/engine.mjs` | Domain rules, double-entry journal, reserves, token ownership, workflows |
-| `server/store.mjs` | Serialized, atomic file persistence for local sandbox |
-| `server/http.mjs` | Local HTTP API and static serving |
-| `public/` | Browser console source; no build dependencies |
-| `worker/` | Private Sites adapter, D1 optimistic concurrency, checksum portability |
-| `db/migrations/` | Schema-only D1 SQL and migration metadata |
-| `scripts/build.mjs` | Deterministic self-contained Worker artifact |
-| `.openai/hosting.json` | Sites identity and hosting bindings |
-| `.github/workflows/ci.yml` | Tests and build on push/pull request |
-| `docs/` | Architecture, threat model, operations, readiness gates, OpenAPI |
-| `dist/` | Generated deployment output; ignored |
-| `.local/`, `data/`, `work/` | Ignored runtime data and scratch files |
+| Path                        | Purpose                                                                  |
+| --------------------------- | ------------------------------------------------------------------------ |
+| `server/engine.mjs`         | Domain rules, double-entry journal, reserves, token ownership, workflows |
+| `server/store.mjs`          | Serialized, atomic file persistence for local sandbox                    |
+| `server/http.mjs`           | Local HTTP API and static serving                                        |
+| `public/`                   | Browser console source; no build dependencies                            |
+| `worker/`                   | Private Sites adapter, D1 optimistic concurrency, checksum portability   |
+| `drizzle/`                  | Schema-only D1 SQL and migration metadata                                |
+| `scripts/build.mjs`         | Deterministic self-contained Worker artifact                             |
+| `.openai/hosting.json`      | Sites identity and hosting bindings                                      |
+| `.github/workflows/ci.yml`  | Tests and build on push/pull request                                     |
+| `docs/`                     | Architecture, threat model, operations, readiness gates, OpenAPI         |
+| `dist/`                     | Generated deployment output; ignored                                     |
+| `.local/`, `data/`, `work/` | Ignored runtime data and scratch files                                   |
 
-`npm run build` emits `dist/server/index.js` and hosting/migration files. Hosted state uses a private Sites D1 binding with compare-and-swap updates; missing storage fails closed. Sites dispatch provides visitor identity. Do not expose the Worker directly or treat identity headers supplied by arbitrary callers as authentication.
+`npm run test:artifact` also validates the packaged Worker against SQLite and tests a full mint/transfer/burn cycle. `npm run build` emits `dist/server/index.js` and hosting/migration files. Hosted state uses a private Sites D1 binding with compare-and-swap updates; missing storage fails closed. Sites dispatch provides visitor identity. Do not expose the Worker directly or treat identity headers supplied by arbitrary callers as authentication.
 
 ## From sandbox to live
 

@@ -4,15 +4,15 @@ The delivered project is intended to be easy to run as a **sandbox**. A runnable
 
 ## Filesystem layout
 
-| Path | Responsibility |
-| --- | --- |
-| `public/` | Browser source assets; local public delivery boundary |
-| `dist/` | Generated Worker deployment artifacts; ignored |
-| `worker/` | Hosted API adapter with D1 optimistic concurrency |
-| `db/migrations/` | Schema-only hosted database migrations |
-| `server/` | Domain engine, persistence adapter, local HTTP entrypoint and tests |
-| `docs/` | Architecture, API contract, threat model and release gates |
-| `.openai/hosting.json` | Sites deployment identity/configuration; retain the actual assigned project ID |
+| Path                    | Responsibility                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------- |
+| `public/`               | Browser source assets; local public delivery boundary                                       |
+| `dist/`                 | Generated Worker deployment artifacts; ignored                                              |
+| `worker/`               | Hosted API adapter with D1 optimistic concurrency                                           |
+| `drizzle/`        | Schema-only hosted database migrations                                                      |
+| `server/`               | Domain engine, persistence adapter, local HTTP entrypoint and tests                         |
+| `docs/`                 | Architecture, API contract, threat model and release gates                                  |
+| `.openai/hosting.json`  | Sites deployment identity/configuration; retain the actual assigned project ID              |
 | Runtime state directory | Writable sandbox state only; outside the static asset tree and excluded from source control |
 
 Keep implementation source, build artifacts, runtime data and secrets separate. Do not serve the repository root. Do not place state files, environment files, test fixtures containing sensitive information, signing keys or database backups under `public/` or `dist/`. Restrict the state directory to the service account, use atomic writes, and retain a tested synthetic-data backup before destructive resets.

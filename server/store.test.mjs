@@ -1,4 +1,42 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,rm,readFile} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';
-const module=await import('./store.mjs').catch(()=>({}));
-test('durable store serializes concurrent transfers and survives reopening',async()=>{assert.equal(typeof module.openStore,'function','durable store must exist');const dir=await mkdtemp(join(tmpdir(),'meridian-'));try{const file=join(dir,'state.json');const store=await module.openStore(file);await Promise.all(Array.from({length:8},(_,i)=>store.command({type:'transfer',from:'operating-usd',to:'customer-usd',amount:100,idempotencyKey:`t${i}`})));assert.equal(store.snapshot().transactions.length,8);const reopened=await module.openStore(file);assert.equal(reopened.snapshot().transactions.length,8);assert.equal(reopened.snapshot().metrics.ledgerBalanced,true);assert.equal(JSON.parse(await readFile(file,'utf8')).version,1);}finally{await rm(dir,{recursive:true,force:true});}});
-test('live mode fails closed rather than simulating payments',async()=>{assert.equal(typeof module.assertSandboxMode,'function','mode gate must exist');assert.throws(()=>module.assertSandboxMode('live'),/live/i);assert.throws(()=>module.assertSandboxMode('LIVE'),/mode/i);assert.doesNotThrow(()=>module.assertSandboxMode('sandbox'));});
+import test from "node:test";
+import assert from "node:assert/strict";
+import { mkdtemp, rm, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+const module = await import("./store.mjs").catch(() => ({}));
+test("durable store serializes concurrent transfers and survives reopening", async () => {
+  assert.equal(typeof module.openStore, "function", "durable store must exist");
+  const dir = await mkdtemp(join(tmpdir(), "meridian-"));
+  try {
+    const file = join(dir, "state.json");
+    const store = await module.openStore(file);
+    await Promise.all(
+      Array.from({ length: 8 }, (_, i) =>
+        store.command({
+          type: "transfer",
+          from: "operating-usd",
+          to: "customer-usd",
+          amount: 100,
+          idempotencyKey: `t${i}`,
+        }),
+      ),
+    );
+    assert.equal(store.snapshot().transactions.length, 8);
+    const reopened = await module.openStore(file);
+    assert.equal(reopened.snapshot().transactions.length, 8);
+    assert.equal(reopened.snapshot().metrics.ledgerBalanced, true);
+    assert.equal(JSON.parse(await readFile(file, "utf8")).version, 1);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+test("live mode fails closed rather than simulating payments", async () => {
+  assert.equal(
+    typeof module.assertSandboxMode,
+    "function",
+    "mode gate must exist",
+  );
+  assert.throws(() => module.assertSandboxMode("live"), /live/i);
+  assert.throws(() => module.assertSandboxMode("LIVE"), /mode/i);
+  assert.doesNotThrow(() => module.assertSandboxMode("sandbox"));
+});

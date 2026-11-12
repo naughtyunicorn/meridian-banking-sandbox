@@ -13,3 +13,4 @@ dist/.openai/
 dist/drizzle/
 *.log
 .local/
+.prettiercache
